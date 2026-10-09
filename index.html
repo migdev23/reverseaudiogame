@@ -1,0 +1,842 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Audio Reverse Recorder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+
+<style>
+:root {
+  --bg:           #0f0f0f;
+  --surface:      #1c1c1e;
+  --surface2:     #2c2c2e;
+  --btn-record:   #e8433a;
+  --btn-rec-dark: #c73029;
+  --btn-idle:     #2c2c2e;
+  --btn-idle-bdr: #3a3a3c;
+  --fg:           #ffffff;
+  --fg-2:         rgba(255,255,255,0.7);
+  --fg-3:         rgba(255,255,255,0.35);
+  --glow-red:     rgba(232,67,58,0.4);
+  --glow-grn:     rgba(52,211,153,0.35);
+  --active-grn:   #059669;
+  --playing-blue: #2563eb;
+  color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:var(--bg);color:var(--fg);font-family:'Inter',system-ui,sans-serif}
+body{display:flex;flex-direction:column;align-items:center;padding:16px;gap:0;overflow-x:hidden}
+
+/* ── Language selector ── */
+.lang-bar{
+  width:100%;max-width:480px;
+  display:flex;justify-content:flex-end;gap:6px;
+  margin-bottom:12px;
+}
+.lang-btn{
+  display:flex;align-items:center;gap:5px;
+  background:var(--surface2);border:1.5px solid var(--btn-idle-bdr);
+  border-radius:20px;padding:5px 11px;
+  font-family:inherit;font-size:0.73rem;font-weight:600;
+  color:var(--fg-2);cursor:pointer;
+  transition:all 0.18s;-webkit-tap-highlight-color:transparent;
+  letter-spacing:0.04em;
+}
+.lang-btn .flag{font-size:1rem;line-height:1}
+.lang-btn.active{
+  background:rgba(255,255,255,0.12);
+  border-color:rgba(255,255,255,0.5);
+  color:#fff;
+  box-shadow:0 0 0 2px rgba(255,255,255,0.08);
+}
+
+/* ── Permission banner ── */
+#permBanner{
+  width:100%;max-width:480px;
+  background:#1f2937;border:1px solid #374151;
+  border-radius:16px;padding:18px 20px;
+  display:flex;flex-direction:column;gap:12px;
+  margin-bottom:16px;
+}
+#permBanner[hidden]{display:none}
+.perm-title{font-size:0.9rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.perm-title svg{width:18px;height:18px;fill:#facc15;flex-shrink:0}
+.perm-desc{font-size:0.78rem;color:var(--fg-2);line-height:1.5}
+#btnGrantPerm{
+  align-self:flex-end;background:var(--btn-record);color:#fff;
+  border:none;border-radius:10px;padding:9px 20px;
+  font-family:inherit;font-size:0.82rem;font-weight:700;
+  cursor:pointer;transition:background 0.15s;letter-spacing:0.03em;
+}
+#btnGrantPerm:hover{background:var(--btn-rec-dark)}
+
+/* ── Status bar ── */
+.status-bar{
+  width:100%;max-width:480px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 4px;margin-bottom:12px;min-height:22px;
+}
+.status-pill{display:flex;align-items:center;gap:6px;font-size:0.72rem;font-weight:600;color:var(--fg-3);letter-spacing:0.07em;text-transform:uppercase}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--fg-3);flex-shrink:0;transition:background 0.25s}
+.status-dot.rec{background:var(--btn-record);animation:blink 0.9s ease-in-out infinite}
+.status-dot.play{background:var(--playing-blue);animation:blink 0.9s ease-in-out infinite}
+.status-dot.rev{background:var(--active-grn);animation:blink 0.7s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.timer{font-size:0.75rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--btn-record);letter-spacing:0.05em}
+
+/* ── Waveform ── */
+.viz-wrap{
+  width:100%;max-width:480px;height:72px;
+  border-radius:14px;background:#0a0a0a;
+  overflow:hidden;margin-bottom:18px;
+  border:1px solid #2a2a2a;
+  position:relative;
+}
+.viz-wrap::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(to right,#0a0a0a 0%,transparent 8%,transparent 92%,#0a0a0a 100%);
+  pointer-events:none;
+}
+#viz{display:block;width:100%;height:100%}
+
+/* ── App container ── */
+.app{width:100%;max-width:480px;display:flex;flex-direction:column;gap:10px}
+.group{display:flex;flex-direction:column;gap:7px}
+.group-sep{display:flex;align-items:center;gap:10px;padding:4px 4px}
+.group-sep::before,.group-sep::after{content:'';flex:1;height:1px;background:#2a2a2a}
+.dots{display:flex;gap:5px;align-items:center}
+.dots span{width:4px;height:4px;border-radius:50%;background:#3a3a3c}
+
+/* ── Big buttons ── */
+.btn{
+  width:100%;border:none;border-radius:20px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:9px;padding:22px 16px 18px;
+  cursor:pointer;font-family:'Inter',system-ui,sans-serif;
+  font-size:0.85rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;
+  color:var(--fg);position:relative;overflow:hidden;
+  -webkit-tap-highlight-color:transparent;user-select:none;outline:none;
+  transition:transform 0.12s cubic-bezier(.2,.8,.2,1), box-shadow 0.25s, background 0.2s, opacity 0.2s;
+}
+.btn:focus-visible{outline:2px solid rgba(255,255,255,0.35);outline-offset:3px}
+.btn:active:not(:disabled){transform:scale(0.96)}
+.btn:disabled{opacity:0.3;cursor:not-allowed}
+
+/* ripple */
+.btn::before{
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  background:rgba(255,255,255,0.08);
+  opacity:0;transition:opacity 0.15s;
+}
+.btn:active:not(:disabled)::before{opacity:1}
+
+/* icon */
+.btn-icon{width:48px;height:48px;display:flex;align-items:center;justify-content:center}
+.btn-icon svg{width:100%;height:100%;fill:currentColor}
+
+/* track badge */
+.track-badge{
+  position:absolute;top:10px;right:12px;
+  font-size:0.6rem;font-weight:700;letter-spacing:0.05em;
+  padding:3px 7px;border-radius:20px;
+  opacity:0;transform:translateY(-4px);
+  transition:opacity 0.3s,transform 0.3s;
+  pointer-events:none;
+  text-transform:uppercase;
+}
+.track-badge.show{opacity:1;transform:translateY(0)}
+.track-badge.saved{background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.85)}
+.track-badge.overwritten{background:rgba(232,67,58,0.25);color:#fca5a5}
+
+/* success shimmer overlay */
+.btn-shimmer{
+  position:absolute;inset:0;border-radius:inherit;
+  background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,0.18) 50%,transparent 70%);
+  background-size:200% 100%;
+  opacity:0;pointer-events:none;
+}
+.btn-shimmer.run{animation:shimmer 0.7s ease forwards}
+@keyframes shimmer{0%{opacity:1;background-position:100% 0}100%{opacity:0;background-position:-100% 0}}
+
+/* RECORD ORIGINAL */
+.btn-rec-orig{background:var(--btn-record);box-shadow:0 4px 22px var(--glow-red)}
+.btn-rec-orig:hover:not(:disabled){background:#d93c33;box-shadow:0 6px 28px var(--glow-red)}
+.btn-rec-orig.active{background:var(--btn-rec-dark);box-shadow:0 0 0 3px rgba(232,67,58,0.5),0 4px 24px var(--glow-red)}
+
+/* PLAY BACKWARDS orig */
+.btn-play-orig{background:var(--btn-idle);box-shadow:0 2px 8px rgba(0,0,0,0.5);border:1px solid var(--btn-idle-bdr)}
+.btn-play-orig:hover:not(:disabled){background:#3a3a3c;border-color:#555}
+.btn-play-orig.active{background:var(--playing-blue);border-color:var(--playing-blue);box-shadow:0 0 0 3px rgba(37,99,235,0.3),0 4px 20px rgba(37,99,235,0.35)}
+
+/* RECORD MIMIC */
+.btn-rec-mimic{background:var(--btn-idle);box-shadow:0 2px 8px rgba(0,0,0,0.5);border:1px solid var(--btn-idle-bdr)}
+.btn-rec-mimic:hover:not(:disabled){background:#3a3a3c;border-color:#555}
+.btn-rec-mimic.active{background:var(--active-grn);border-color:var(--active-grn);box-shadow:0 0 0 3px rgba(5,150,105,0.4),0 4px 22px var(--glow-grn)}
+
+/* PLAY BACKWARDS mimic */
+.btn-play-mimic{background:var(--btn-idle);box-shadow:0 2px 8px rgba(0,0,0,0.5);border:1px solid var(--btn-idle-bdr)}
+.btn-play-mimic:hover:not(:disabled){background:#3a3a3c;border-color:#555}
+.btn-play-mimic.active{background:var(--active-grn);border-color:var(--active-grn);box-shadow:0 0 0 3px rgba(5,150,105,0.3)}
+
+/* Progress strip */
+.btn-progress{
+  position:absolute;bottom:0;left:0;height:3px;width:0%;
+  background:rgba(255,255,255,0.6);border-radius:0 0 20px 20px;
+  transition:width 0.1s linear;
+}
+
+/* ── Custom modal ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.75);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;z-index:100;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  opacity:0;transition:opacity 0.2s;
+  pointer-events:none;
+}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal-box{
+  background:#1c1c1e;border:1px solid #3a3a3c;
+  border-radius:20px;padding:28px 24px 20px;
+  max-width:340px;width:100%;
+  transform:translateY(12px) scale(0.97);
+  transition:transform 0.2s cubic-bezier(.2,.8,.2,1);
+  display:flex;flex-direction:column;gap:14px;
+}
+.modal-overlay.show .modal-box{transform:translateY(0) scale(1)}
+.modal-icon{font-size:2rem;text-align:center}
+.modal-title{font-size:1rem;font-weight:700;text-align:center}
+.modal-desc{font-size:0.82rem;color:var(--fg-2);text-align:center;line-height:1.5}
+.modal-actions{display:flex;gap:10px;margin-top:4px}
+.modal-btn{
+  flex:1;padding:12px;border:none;border-radius:12px;
+  font-family:inherit;font-size:0.85rem;font-weight:700;
+  cursor:pointer;transition:all 0.15s;letter-spacing:0.02em;
+}
+.modal-btn-cancel{background:var(--surface2);color:var(--fg-2);border:1px solid var(--btn-idle-bdr)}
+.modal-btn-cancel:hover{background:#3a3a3c;color:#fff}
+.modal-btn-confirm{background:var(--btn-record);color:#fff}
+.modal-btn-confirm:hover{background:var(--btn-rec-dark)}
+
+@media(prefers-reduced-motion:reduce){.status-dot{animation:none!important}.btn{transition:none}.btn-shimmer{animation:none!important}}
+@media(max-width:380px){
+  .btn{padding:18px 12px 14px;border-radius:16px;font-size:0.8rem}
+  .btn-icon{width:42px;height:42px}
+}
+</style>
+
+<!-- Language bar -->
+<div class="lang-bar">
+  <button class="lang-btn active" id="btnEN" onclick="setLang('en')">
+    <span class="flag">🇬🇧</span> EN
+  </button>
+  <button class="lang-btn" id="btnES" onclick="setLang('es')">
+    <span class="flag">🇪🇸</span> ES
+  </button>
+</div>
+
+<!-- Permission banner -->
+<div id="permBanner">
+  <div class="perm-title">
+    <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm.75 14.5h-1.5v-6h1.5v6zm0-8h-1.5V7h1.5v1.5z"/></svg>
+    <span id="permTitle">Microphone permission required</span>
+  </div>
+  <div class="perm-desc" id="permDesc">This app needs microphone access to record audio. Permission is only for this page.</div>
+  <button id="btnGrantPerm">Allow microphone</button>
+</div>
+
+<!-- Status bar -->
+<div class="status-bar">
+  <div class="status-pill">
+    <span class="status-dot" id="sDot"></span>
+    <span id="sText">Ready</span>
+  </div>
+  <span class="timer" id="timerEl" hidden>0:00</span>
+</div>
+
+<!-- Waveform -->
+<div class="viz-wrap"><canvas id="viz"></canvas></div>
+
+<!-- Buttons -->
+<div class="app">
+  <div class="group">
+    <button class="btn btn-rec-orig" id="btnRecOrig">
+      <div class="track-badge" id="badgeRecOrig"></div>
+      <div class="btn-shimmer" id="shimmerRecOrig"></div>
+      <div class="btn-icon" id="iconRecOrig">
+        <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm-1 3a1 1 0 0 1 2 0v8a1 1 0 0 1-2 0V4zM7 11a1 1 0 0 1 1 1 4 4 0 0 0 8 0 1 1 0 1 1 2 0 6 6 0 0 1-5 5.92V20h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-3.08A6 6 0 0 1 6 12a1 1 0 0 1 1-1z"/></svg>
+      </div>
+      <span id="lblRecOrig">Record Original</span>
+      <div class="btn-progress" id="prRecOrig"></div>
+    </button>
+    <button class="btn btn-play-orig" id="btnPlayOrig" disabled>
+      <div class="btn-icon" id="iconPlayOrig">
+        <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6l-8.5 6z"/></svg>
+      </div>
+      <span id="lblPlayOrig">Play Backwards</span>
+      <div class="btn-progress" id="prPlayOrig"></div>
+    </button>
+  </div>
+
+  <div class="group-sep">
+    <div class="dots"><span></span><span></span><span></span><span></span><span></span></div>
+  </div>
+
+  <div class="group">
+    <button class="btn btn-rec-mimic" id="btnRecMimic">
+      <div class="track-badge" id="badgeRecMimic"></div>
+      <div class="btn-shimmer" id="shimmerRecMimic"></div>
+      <div class="btn-icon" id="iconRecMimic">
+        <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm-1 3a1 1 0 0 1 2 0v8a1 1 0 0 1-2 0V4zM7 11a1 1 0 0 1 1 1 4 4 0 0 0 8 0 1 1 0 1 1 2 0 6 6 0 0 1-5 5.92V20h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-3.08A6 6 0 0 1 6 12a1 1 0 0 1 1-1z"/></svg>
+      </div>
+      <span id="lblRecMimic">Record Mimic</span>
+      <div class="btn-progress" id="prRecMimic"></div>
+    </button>
+    <button class="btn btn-play-mimic" id="btnPlayMimic" disabled>
+      <div class="btn-icon" id="iconPlayMimic">
+        <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6l-8.5 6z"/></svg>
+      </div>
+      <span id="lblPlayMimic">Play Backwards</span>
+      <div class="btn-progress" id="prPlayMimic"></div>
+    </button>
+  </div>
+</div>
+
+<!-- Overwrite confirmation modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <div class="modal-title" id="modalTitle">Overwrite recording?</div>
+    <div class="modal-desc" id="modalDesc">You already have a recording. Do you want to replace it with a new one?</div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" id="modalCancel">Cancel</button>
+      <button class="modal-btn modal-btn-confirm" id="modalConfirm">Overwrite</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ── i18n ── */
+const T = {
+  en: {
+    ready:'Ready', processing:'Processing…', noMic:'No microphone',
+    denied:'Permission denied', notSupported:'Not supported',
+    permTitle:'Microphone permission required',
+    permDesc:'This app needs microphone access to record audio. Permission is only for this page.',
+    permBtn:'Allow microphone', permRequesting:'Requesting…',
+    permDenied:'Permission denied. Enable it in browser settings (🔒 icon) and reload.',
+    permFail:'Could not access microphone: ',
+    recOrig:'Record Original', recMimic:'Record Mimic',
+    playBwd:'Play Backwards', stop:'Stop', stopping:'Stopping…',
+    recOrigStatus:'Recording Original…', recMimicStatus:'Recording Mimic…',
+    playRevStatus:'Playing backwards…', playMimicRevStatus:'Playing Mimic backwards…',
+    origReady:'Original ready', mimicReady:'Mimic ready', error:'Error processing',
+    badgeSaved:'✓ Saved', badgeOverwritten:'↺ Overwritten',
+    modalTitle:'Overwrite recording?',
+    modalDesc:'You already have a recording. Do you want to replace it with a new one?',
+    modalCancel:'Cancel', modalConfirm:'Overwrite',
+    firstMicMsg:'You need to allow the microphone first',
+  },
+  es: {
+    ready:'Listo', processing:'Procesando…', noMic:'Sin micrófono',
+    denied:'Permiso denegado', notSupported:'No soportado',
+    permTitle:'Permiso de micrófono necesario',
+    permDesc:'Esta app necesita acceso al micrófono para grabar audio. Solo para esta página.',
+    permBtn:'Permitir micrófono', permRequesting:'Solicitando…',
+    permDenied:'Permiso denegado. Actívalo en la configuración del navegador (icono 🔒) y recarga.',
+    permFail:'No se pudo acceder al micrófono: ',
+    recOrig:'Grabar Original', recMimic:'Grabar Mímica',
+    playBwd:'Reproducir al Revés', stop:'Detener', stopping:'Deteniendo…',
+    recOrigStatus:'Grabando Original…', recMimicStatus:'Grabando Mímica…',
+    playRevStatus:'Reproduciendo al revés…', playMimicRevStatus:'Reproduciendo Mímica al revés…',
+    origReady:'Original listo', mimicReady:'Mímica lista', error:'Error al procesar',
+    badgeSaved:'✓ Guardado', badgeOverwritten:'↺ Sobreescrito',
+    modalTitle:'¿Sobreescribir grabación?',
+    modalDesc:'Ya tienes una grabación. ¿Quieres reemplazarla con una nueva?',
+    modalCancel:'Cancelar', modalConfirm:'Sobreescribir',
+    firstMicMsg:'Primero debes permitir el micrófono',
+  }
+};
+let lang = 'en';
+
+function t(k){ return T[lang][k] || k; }
+
+function applyLang(){
+  document.getElementById('permTitle').textContent   = t('permTitle');
+  document.getElementById('permDesc').textContent    = t('permDesc');
+  document.getElementById('btnGrantPerm').textContent= (btnGrantLoading ? t('permRequesting') : t('permBtn'));
+  document.getElementById('lblRecOrig').textContent  = (recording==='orig' ? t('stop') : t('recOrig'));
+  document.getElementById('lblRecMimic').textContent = (recording==='mimic'? t('stop') : t('recMimic'));
+  document.getElementById('lblPlayOrig').textContent = (origPlaying ? t('stop') : t('playBwd'));
+  document.getElementById('lblPlayMimic').textContent= (mimicPlaying ? t('stop') : t('playBwd'));
+  document.getElementById('modalTitle').textContent  = t('modalTitle');
+  document.getElementById('modalDesc').textContent   = t('modalDesc');
+  document.getElementById('modalCancel').textContent = t('modalCancel');
+  document.getElementById('modalConfirm').textContent= t('modalConfirm');
+  // update status text based on current state
+  if(!recording && !origPlaying && !mimicPlaying){
+    setStatus(currentDotClass, currentStatusText, false);
+  }
+}
+
+window.setLang = function(l){
+  lang = l;
+  document.getElementById('btnEN').classList.toggle('active', l==='en');
+  document.getElementById('btnES').classList.toggle('active', l==='es');
+  applyLang();
+};
+
+/* ── DOM refs ── */
+const permBanner  = document.getElementById('permBanner');
+const btnGrant    = document.getElementById('btnGrantPerm');
+const permDesc    = document.getElementById('permDesc');
+const sDot        = document.getElementById('sDot');
+const sText       = document.getElementById('sText');
+const timerEl     = document.getElementById('timerEl');
+const vizCanvas   = document.getElementById('viz');
+const ctx2d       = vizCanvas.getContext('2d');
+
+const btnRecOrig   = document.getElementById('btnRecOrig');
+const btnPlayOrig  = document.getElementById('btnPlayOrig');
+const btnRecMimic  = document.getElementById('btnRecMimic');
+const btnPlayMimic = document.getElementById('btnPlayMimic');
+const iconRecOrig  = document.getElementById('iconRecOrig');
+const iconPlayOrig = document.getElementById('iconPlayOrig');
+const iconRecMimic = document.getElementById('iconRecMimic');
+const iconPlayMimic= document.getElementById('iconPlayMimic');
+const lblRecOrig   = document.getElementById('lblRecOrig');
+const lblPlayOrig  = document.getElementById('lblPlayOrig');
+const lblRecMimic  = document.getElementById('lblRecMimic');
+const lblPlayMimic = document.getElementById('lblPlayMimic');
+const prPlayOrig   = document.getElementById('prPlayOrig');
+const prPlayMimic  = document.getElementById('prPlayMimic');
+const badgeRecOrig = document.getElementById('badgeRecOrig');
+const badgeRecMimic= document.getElementById('badgeRecMimic');
+const shimmerRecOrig  = document.getElementById('shimmerRecOrig');
+const shimmerRecMimic = document.getElementById('shimmerRecMimic');
+const modalOverlay = document.getElementById('modalOverlay');
+const modalCancel  = document.getElementById('modalCancel');
+const modalConfirm = document.getElementById('modalConfirm');
+
+/* ── SVG icons ── */
+const IC = {
+  mic:  '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zm-1 3a1 1 0 0 1 2 0v8a1 1 0 0 1-2 0V4zM7 11a1 1 0 0 1 1 1 4 4 0 0 0 8 0 1 1 0 1 1 2 0 6 6 0 0 1-5 5.92V20h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-3.08A6 6 0 0 1 6 12a1 1 0 0 1 1-1z"/></svg>',
+  stop: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="3"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6l-8.5 6z"/></svg>',
+};
+function setIcon(el, key){ el.innerHTML = IC[key]; }
+
+/* ── Canvas resize ── */
+function resizeCanvas(){
+  const dpr = window.devicePixelRatio || 1;
+  const w = vizCanvas.offsetWidth, h = vizCanvas.offsetHeight;
+  vizCanvas.width  = w * dpr;
+  vizCanvas.height = h * dpr;
+  ctx2d.setTransform(dpr,0,0,dpr,0,0);
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+/* ── State ── */
+let micGranted   = false;
+let audioCtx     = null;
+let analyser     = null;
+let animId       = null;
+let timerIv      = null;
+let recSecs      = 0;
+let btnGrantLoading = false;
+let currentDotClass = '';
+let currentStatusText = 'Ready';
+
+let origBuffer     = null, origRevBuffer  = null;
+let origRecorder   = null, origChunks     = [];
+let origPlaying    = false, origSource    = null;
+let mimicBuffer    = null, mimicRevBuffer = null;
+let mimicRecorder  = null, mimicChunks    = [];
+let mimicPlaying   = false, mimicSource   = null;
+let recording      = null; // 'orig'|'mimic'|null
+
+/* ── Overwrite modal ── */
+let pendingRecordGroup = null;
+
+function showModal(group){
+  pendingRecordGroup = group;
+  modalOverlay.classList.add('show');
+}
+function hideModal(){
+  modalOverlay.classList.remove('show');
+  pendingRecordGroup = null;
+}
+
+modalCancel.addEventListener('click', hideModal);
+modalOverlay.addEventListener('click', e => { if(e.target === modalOverlay) hideModal(); });
+modalConfirm.addEventListener('click', () => {
+  const g = pendingRecordGroup;
+  hideModal();
+  if(g) doStartRecord(g);
+});
+
+/* ── Permission ── */
+async function grantMic(){
+  btnGrantLoading = true;
+  btnGrant.disabled = true;
+  btnGrant.textContent = t('permRequesting');
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    stream.getTracks().forEach(tr => tr.stop());
+    permBanner.hidden = true;
+    micGranted = true;
+    btnGrantLoading = false;
+    setStatus('', t('ready'), false);
+  } catch(e){
+    btnGrantLoading = false;
+    btnGrant.disabled = false;
+    btnGrant.textContent = t('permBtn');
+    permDesc.textContent = (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError')
+      ? t('permDenied') : t('permFail') + e.message;
+    setStatus('', t('noMic'), false);
+  }
+}
+btnGrant.addEventListener('click', grantMic);
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    permDesc.textContent = T.en.notSupported; // language not set yet
+    btnGrant.disabled = true;
+    setStatus('', t('notSupported'), false);
+    return;
+  }
+  try {
+    const perm = await navigator.permissions.query({ name: 'microphone' });
+    if (perm.state === 'granted'){
+      permBanner.hidden = true; micGranted = true;
+      setStatus('', t('ready'), false);
+    } else if (perm.state === 'denied'){
+      permDesc.textContent = t('permDenied');
+      btnGrant.disabled = true;
+      setStatus('', t('denied'), false);
+    }
+    perm.onchange = () => {
+      if (perm.state === 'granted'){
+        permBanner.hidden = true; micGranted = true;
+        setStatus('', t('ready'), false);
+      }
+    };
+  } catch(_){}
+});
+
+/* ── AudioContext ── */
+function getCtx(){
+  if (!audioCtx || audioCtx.state === 'closed')
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+/* ── Status ── */
+function setStatus(dotClass, text, showTimer){
+  currentDotClass = dotClass;
+  currentStatusText = text;
+  sDot.className = 'status-dot' + (dotClass ? ' '+dotClass : '');
+  sText.textContent = text;
+  timerEl.hidden = !showTimer;
+}
+
+/* ── Timer ── */
+function startTimer(){
+  recSecs = 0; timerEl.textContent = '0:00'; timerEl.hidden = false;
+  timerIv = setInterval(() => {
+    recSecs++;
+    timerEl.textContent = Math.floor(recSecs/60)+':'+(String(recSecs%60).padStart(2,'0'));
+  }, 1000);
+}
+function stopTimer(){ clearInterval(timerIv); timerEl.hidden = true; }
+
+/* ── Waveform ── */
+function drawIdle(){
+  const w = vizCanvas.offsetWidth, h = vizCanvas.offsetHeight;
+  ctx2d.clearRect(0,0,w,h);
+  // Horizontal center line
+  ctx2d.strokeStyle = '#333';
+  ctx2d.lineWidth = 1;
+  ctx2d.beginPath(); ctx2d.moveTo(0,h/2); ctx2d.lineTo(w,h/2); ctx2d.stroke();
+  // Small tick marks
+  ctx2d.strokeStyle = '#2a2a2a';
+  ctx2d.lineWidth = 1;
+  for(let x=0; x<w; x+=8){
+    const ph = Math.random()*3;
+    ctx2d.beginPath(); ctx2d.moveTo(x, h/2-ph); ctx2d.lineTo(x, h/2+ph); ctx2d.stroke();
+  }
+}
+
+function drawWave(data, color){
+  const w = vizCanvas.offsetWidth, h = vizCanvas.offsetHeight;
+  ctx2d.clearRect(0,0,w,h);
+  const len = data.length;
+  const bw = w / len;
+
+  // Glow layer
+  ctx2d.lineWidth = 5;
+  ctx2d.strokeStyle = color + '30';
+  ctx2d.lineJoin = 'round'; ctx2d.lineCap = 'round';
+  ctx2d.beginPath();
+  for(let i=0; i<len; i++){
+    const v = (data[i] - 128) / 128;
+    const y = h/2 + v * (h/2) * 0.85;
+    i===0 ? ctx2d.moveTo(0, y) : ctx2d.lineTo(i*bw, y);
+  }
+  ctx2d.stroke();
+
+  // Main line
+  ctx2d.lineWidth = 2.5;
+  ctx2d.strokeStyle = color;
+  ctx2d.beginPath();
+  for(let i=0; i<len; i++){
+    const v = (data[i] - 128) / 128;
+    const y = h/2 + v * (h/2) * 0.85;
+    i===0 ? ctx2d.moveTo(0, y) : ctx2d.lineTo(i*bw, y);
+  }
+  ctx2d.stroke();
+}
+
+function startViz(color){
+  if (!analyser) return;
+  const buf = new Uint8Array(analyser.fftSize);
+  function loop(){
+    animId = requestAnimationFrame(loop);
+    analyser.getByteTimeDomainData(buf);
+    drawWave(buf, color);
+  }
+  loop();
+}
+function stopViz(){ if(animId){ cancelAnimationFrame(animId); animId=null; } drawIdle(); }
+
+/* ── Reverse buffer ── */
+function reverseBuffer(buf){
+  const ac = getCtx();
+  const out = ac.createBuffer(buf.numberOfChannels, buf.length, buf.sampleRate);
+  for(let c=0; c<buf.numberOfChannels; c++){
+    const src = buf.getChannelData(c), dst = out.getChannelData(c), len = src.length;
+    for(let i=0; i<len; i++) dst[i] = src[len-1-i];
+  }
+  return out;
+}
+
+function stopSource(src){ if(!src) return; try{ src.stop(); }catch(e){} }
+
+/* ── Track badge + shimmer ── */
+function showBadge(badgeEl, shimmerEl, type){
+  badgeEl.textContent = t(type === 'saved' ? 'badgeSaved' : 'badgeOverwritten');
+  badgeEl.className = 'track-badge ' + type + ' show';
+  shimmerEl.classList.remove('run');
+  void shimmerEl.offsetWidth; // reflow
+  shimmerEl.classList.add('run');
+}
+
+/* ── Generic play reversed ── */
+function playReversed(revBuf, color, prBar, onEnd){
+  const ac = getCtx();
+  analyser = ac.createAnalyser();
+  analyser.fftSize = 2048;
+  const src = ac.createBufferSource();
+  src.buffer = revBuf;
+  src.connect(analyser); analyser.connect(ac.destination);
+  const dur = revBuf.duration, t0 = ac.currentTime;
+  let prRaf = null;
+  function tickPr(){
+    const pct = Math.min(((ac.currentTime - t0) / dur) * 100, 100);
+    prBar.style.width = pct + '%';
+    if(pct < 100) prRaf = requestAnimationFrame(tickPr);
+  }
+  prBar.style.width = '0%'; tickPr();
+  startViz(color);
+  src.start(0);
+  src.onended = () => {
+    if(prRaf) cancelAnimationFrame(prRaf);
+    prBar.style.width = '0%'; stopViz(); onEnd(src);
+  };
+  return { src };
+}
+
+/* ── Record — with overwrite check ── */
+function tryRecord(group){
+  if (!micGranted){ permBanner.hidden=false; permBanner.scrollIntoView({behavior:'smooth',block:'center'}); setStatus('','',false); return; }
+  const hasExisting = (group==='orig' ? origBuffer : mimicBuffer);
+  if(hasExisting){ showModal(group); }
+  else { doStartRecord(group); }
+}
+
+async function doStartRecord(group){
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio:true, video:false }); }
+  catch(e){
+    micGranted = false; permBanner.hidden = false;
+    permDesc.textContent = t('permDenied');
+    setStatus('', t('noMic'), false); return;
+  }
+  const ac = getCtx();
+  analyser = ac.createAnalyser();
+  analyser.fftSize = 2048;
+  const micSrc = ac.createMediaStreamSource(stream);
+  micSrc.connect(analyser);
+
+  const recorder = new MediaRecorder(stream);
+  const chunks = [];
+  recorder.ondataavailable = e => { if(e.data.size>0) chunks.push(e.data); };
+
+  if(group === 'orig'){
+    origRecorder = recorder; origChunks = chunks;
+    origRecorder.onstop = () => { stream.getTracks().forEach(tr=>tr.stop()); processOrig(); };
+    origRecorder.start();
+    recording = 'orig';
+    btnRecOrig.classList.add('active');
+    setIcon(iconRecOrig, 'stop');
+    lblRecOrig.textContent = t('stop');
+    btnPlayOrig.disabled = true; btnRecMimic.disabled = true; btnPlayMimic.disabled = true;
+    setStatus('rec', t('recOrigStatus'), true);
+  } else {
+    mimicRecorder = recorder; mimicChunks = chunks;
+    mimicRecorder.onstop = () => { stream.getTracks().forEach(tr=>tr.stop()); processMimic(); };
+    mimicRecorder.start();
+    recording = 'mimic';
+    btnRecMimic.classList.add('active');
+    setIcon(iconRecMimic, 'stop');
+    lblRecMimic.textContent = t('stop');
+    btnRecOrig.disabled = true; btnPlayOrig.disabled = true; btnPlayMimic.disabled = true;
+    setStatus('rec', t('recMimicStatus'), true);
+  }
+  startTimer();
+  startViz('#e8433a');
+}
+
+function stopRecord(group){
+  stopTimer(); stopViz(); recording = null;
+  if(group === 'orig'){
+    if(origRecorder && origRecorder.state !== 'inactive') origRecorder.stop();
+    btnRecOrig.classList.remove('active');
+    setIcon(iconRecOrig, 'mic');
+    lblRecOrig.textContent = t('recOrig');
+    setStatus('', t('processing'), false);
+  } else {
+    if(mimicRecorder && mimicRecorder.state !== 'inactive') mimicRecorder.stop();
+    btnRecMimic.classList.remove('active');
+    setIcon(iconRecMimic, 'mic');
+    lblRecMimic.textContent = t('recMimic');
+    setStatus('', t('processing'), false);
+  }
+}
+
+async function processOrig(){
+  const wasOverwrite = !!origBuffer;
+  const blob = new Blob(origChunks, { type: 'audio/webm' });
+  try {
+    const ab = await blob.arrayBuffer();
+    origBuffer    = await getCtx().decodeAudioData(ab);
+    origRevBuffer = reverseBuffer(origBuffer);
+    btnPlayOrig.disabled  = false;
+    btnRecMimic.disabled  = false;
+    btnPlayMimic.disabled = !mimicRevBuffer;
+    setStatus('', t('origReady'), false);
+    showBadge(badgeRecOrig, shimmerRecOrig, wasOverwrite ? 'overwritten' : 'saved');
+  } catch(e){
+    setStatus('', t('error'), false);
+    btnRecMimic.disabled  = false;
+    btnPlayMimic.disabled = !mimicRevBuffer;
+  }
+}
+
+async function processMimic(){
+  const wasOverwrite = !!mimicBuffer;
+  const blob = new Blob(mimicChunks, { type: 'audio/webm' });
+  try {
+    const ab = await blob.arrayBuffer();
+    mimicBuffer    = await getCtx().decodeAudioData(ab);
+    mimicRevBuffer = reverseBuffer(mimicBuffer);
+    btnPlayMimic.disabled = false;
+    btnRecOrig.disabled   = false;
+    btnPlayOrig.disabled  = !origRevBuffer;
+    setStatus('', t('mimicReady'), false);
+    showBadge(badgeRecMimic, shimmerRecMimic, wasOverwrite ? 'overwritten' : 'saved');
+  } catch(e){
+    setStatus('', t('error'), false);
+    btnRecOrig.disabled   = false;
+    btnPlayOrig.disabled  = !origRevBuffer;
+  }
+}
+
+/* ── Button handlers ── */
+btnRecOrig.addEventListener('click', () => {
+  if(recording === 'orig'){ stopRecord('orig'); return; }
+  if(origPlaying){ stopOrigPlay(); }
+  tryRecord('orig');
+});
+
+btnPlayOrig.addEventListener('click', () => {
+  if(origPlaying){ stopOrigPlay(); return; }
+  if(!origRevBuffer) return;
+  if(mimicPlaying) stopMimicPlay();
+  origPlaying = true;
+  btnPlayOrig.classList.add('active');
+  setIcon(iconPlayOrig, 'stop');
+  lblPlayOrig.textContent = t('stop');
+  btnRecOrig.disabled = true; btnRecMimic.disabled = true;
+  setStatus('play', t('playRevStatus'), false);
+  const { src } = playReversed(origRevBuffer, '#3b82f6', prPlayOrig, () => {
+    origSource = null; origPlaying = false; resetPlayOrigUI();
+    setStatus('', t('origReady'), false);
+  });
+  origSource = src;
+});
+
+function stopOrigPlay(){
+  stopSource(origSource); origSource = null; origPlaying = false;
+  prPlayOrig.style.width = '0%'; stopViz(); resetPlayOrigUI();
+  setStatus('', origBuffer ? t('origReady') : t('ready'), false);
+}
+function resetPlayOrigUI(){
+  btnPlayOrig.classList.remove('active'); setIcon(iconPlayOrig, 'back');
+  lblPlayOrig.textContent = t('playBwd');
+  btnRecOrig.disabled = false; btnRecMimic.disabled = false;
+}
+
+btnRecMimic.addEventListener('click', () => {
+  if(recording === 'mimic'){ stopRecord('mimic'); return; }
+  if(mimicPlaying){ stopMimicPlay(); }
+  tryRecord('mimic');
+});
+
+btnPlayMimic.addEventListener('click', () => {
+  if(mimicPlaying){ stopMimicPlay(); return; }
+  if(!mimicRevBuffer) return;
+  if(origPlaying) stopOrigPlay();
+  mimicPlaying = true;
+  btnPlayMimic.classList.add('active');
+  setIcon(iconPlayMimic, 'stop');
+  lblPlayMimic.textContent = t('stop');
+  btnRecOrig.disabled = true; btnRecMimic.disabled = true;
+  setStatus('rev', t('playMimicRevStatus'), false);
+  const { src } = playReversed(mimicRevBuffer, '#34d399', prPlayMimic, () => {
+    mimicSource = null; mimicPlaying = false; resetPlayMimicUI();
+    setStatus('', t('mimicReady'), false);
+  });
+  mimicSource = src;
+});
+
+function stopMimicPlay(){
+  stopSource(mimicSource); mimicSource = null; mimicPlaying = false;
+  prPlayMimic.style.width = '0%'; stopViz(); resetPlayMimicUI();
+  setStatus('', mimicBuffer ? t('mimicReady') : t('ready'), false);
+}
+function resetPlayMimicUI(){
+  btnPlayMimic.classList.remove('active'); setIcon(iconPlayMimic, 'back');
+  lblPlayMimic.textContent = t('playBwd');
+  btnRecOrig.disabled = false; btnRecMimic.disabled = false;
+}
+
+/* ── Init ── */
+drawIdle();
+})();
+</script>
+
+</body></html>
