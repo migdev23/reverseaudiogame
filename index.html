@@ -1,7 +1,7 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Audio Reverse Recorder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 
 <style>
 :root {
@@ -28,27 +28,101 @@
 html,body{min-height:100%;background:var(--bg);color:var(--fg);font-family:'Inter',system-ui,sans-serif}
 body{display:flex;flex-direction:column;align-items:center;padding:16px;gap:0;overflow-x:hidden}
 
-/* ── Language selector ── */
-.lang-bar{
+/* ── Top row: title + lang trigger ── */
+.top-row{
   width:100%;max-width:480px;
-  display:flex;justify-content:flex-end;gap:6px;
-  margin-bottom:12px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;
+  padding:6px 0 10px;
+  flex-wrap:nowrap;
+  min-height:44px;
 }
-.lang-btn{
+.app-title{
+  font-size:clamp(0.95rem,3.5vw,1.2rem);
+  font-weight:800;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:#fff;
+  white-space:nowrap;
+  flex:1 1 0;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.lang-trigger{
   display:flex;align-items:center;gap:5px;
   background:var(--surface2);border:1.5px solid var(--btn-idle-bdr);
-  border-radius:20px;padding:5px 11px;
-  font-family:inherit;font-size:0.73rem;font-weight:600;
+  border-radius:20px;padding:5px 12px;
+  font-family:inherit;font-size:0.72rem;font-weight:600;
   color:var(--fg-2);cursor:pointer;
   transition:all 0.18s;-webkit-tap-highlight-color:transparent;
   letter-spacing:0.04em;
+  flex-shrink:0;
+  white-space:nowrap;
 }
-.lang-btn .flag{font-size:1rem;line-height:1}
-.lang-btn.active{
-  background:rgba(255,255,255,0.12);
-  border-color:rgba(255,255,255,0.5);
+.lang-trigger:hover{
+  background:rgba(255,255,255,0.1);
+  border-color:rgba(255,255,255,0.3);
   color:#fff;
-  box-shadow:0 0 0 2px rgba(255,255,255,0.08);
+}
+.lang-trigger .curr-flag{font-size:1rem;line-height:1}
+
+/* ── Fixed left slide-out language panel ── */
+.lang-panel-toggle{
+  position:fixed;top:50%;left:0;transform:translateY(-50%);
+  z-index:200;
+  background:var(--surface2);
+  border:1.5px solid var(--btn-idle-bdr);
+  border-left:none;
+  border-radius:0 10px 10px 0;
+  width:28px;height:56px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  transition:background 0.18s, transform 0.18s;
+  -webkit-tap-highlight-color:transparent;
+}
+.lang-panel-toggle:hover{background:#3a3a3c}
+.lang-panel-toggle svg{
+  width:14px;height:14px;fill:var(--fg-2);
+  transition:transform 0.25s cubic-bezier(.4,0,.2,1);
+}
+.lang-panel-toggle.open svg{transform:rotate(180deg)}
+
+.lang-panel{
+  position:fixed;top:50%;left:0;
+  transform:translate(-100%, -50%);
+  z-index:199;
+  background:var(--surface);
+  border:1.5px solid var(--btn-idle-bdr);
+  border-radius:0 16px 16px 0;
+  padding:14px 10px;
+  display:flex;flex-direction:column;gap:6px;
+  transition:transform 0.28s cubic-bezier(.4,0,.2,1);
+  min-width:90px;
+}
+.lang-panel.open{transform:translate(0, -50%)}
+
+.lang-opt{
+  display:flex;align-items:center;gap:8px;
+  background:transparent;border:1.5px solid transparent;
+  border-radius:10px;padding:7px 10px;
+  font-family:inherit;font-size:0.75rem;font-weight:600;
+  color:var(--fg-2);cursor:pointer;
+  letter-spacing:0.04em;
+  transition:all 0.15s;
+  -webkit-tap-highlight-color:transparent;
+  white-space:nowrap;
+}
+.lang-opt .flag{font-size:1.15rem;line-height:1}
+.lang-opt:hover{
+  background:rgba(255,255,255,0.08);
+  border-color:rgba(255,255,255,0.15);
+  color:#fff;
+}
+.lang-opt.active{
+  background:rgba(255,255,255,0.12);
+  border-color:rgba(255,255,255,0.4);
+  color:#fff;
 }
 
 /* ── Permission banner ── */
@@ -197,39 +271,43 @@ body{display:flex;flex-direction:column;align-items:center;padding:16px;gap:0;ov
   transition:width 0.1s linear;
 }
 
-/* ── Header logo ── */
-.app-header{
-  width:100%;max-width:480px;
-  display:flex;align-items:center;justify-content:center;
-  padding:8px 0 4px;
-  margin-bottom:8px;
+/* Overlay to close panel on outside click */
+.lang-overlay{
+  display:none;position:fixed;inset:0;z-index:198;
 }
-.app-header img{
-  height:48px;width:auto;
-  max-width:200px;
-  object-fit:contain;
-  filter:drop-shadow(0 2px 8px rgba(232,67,58,0.25));
-}
+.lang-overlay.open{display:block}
 
 @media(prefers-reduced-motion:reduce){.status-dot{animation:none!important}.btn{transition:none}.btn-shimmer{animation:none!important}}
 @media(max-width:380px){
   .btn{padding:18px 12px 14px;border-radius:16px;font-size:0.8rem}
   .btn-icon{width:42px;height:42px}
+  .app-title{font-size:0.85rem}
 }
 </style>
 
-<!-- Header logo -->
-<header class="app-header">
-  <img src="/logo.png" alt="Logo" onerror="this.style.display='none'">
-</header>
+<!-- Overlay to close lang panel -->
+<div class="lang-overlay" id="langOverlay"></div>
 
-<!-- Language bar -->
-<div class="lang-bar">
-  <button class="lang-btn active" id="btnEN" onclick="setLang('en')">
-    <span class="flag">🇬🇧</span> EN
-  </button>
-  <button class="lang-btn" id="btnES" onclick="setLang('es')">
-    <span class="flag">🇪🇸</span> ES
+<!-- Left slide-out panel toggle -->
+<div class="lang-panel-toggle" id="langToggle" role="button" aria-label="Language menu">
+  <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+</div>
+
+<!-- Slide-out lang panel -->
+<div class="lang-panel" id="langPanel">
+  <button class="lang-opt active" data-lang="en"><span class="flag">🇬🇧</span> EN</button>
+  <button class="lang-opt" data-lang="es"><span class="flag">🇪🇸</span> ES</button>
+  <button class="lang-opt" data-lang="fr"><span class="flag">🇫🇷</span> FR</button>
+  <button class="lang-opt" data-lang="de"><span class="flag">🇩🇪</span> DE</button>
+  <button class="lang-opt" data-lang="pt"><span class="flag">🇵🇹</span> PT</button>
+</div>
+
+<!-- Top row: title + current lang trigger -->
+<div class="top-row">
+  <h1 class="app-title">Game Reserve Audio</h1>
+  <button class="lang-trigger" id="langTriggerBtn" aria-label="Change language">
+    <span class="curr-flag" id="currFlag">🇬🇧</span>
+    <span id="currLangCode">EN</span>
   </button>
 </div>
 
@@ -338,32 +416,140 @@ const T = {
     origReady:'Original listo', mimicReady:'Mímica lista', error:'Error al procesar',
     badgeSaved:'✓ Guardado', badgeOverwritten:'↺ Sobreescrito',
     firstMicMsg:'Primero debes permitir el micrófono',
+  },
+  fr: {
+    ready:'Prêt', processing:'Traitement…', noMic:'Pas de micro',
+    denied:'Permission refusée', notSupported:'Non supporté',
+    permTitle:'Permission microphone requise',
+    permDesc:'Cette app nécessite l\'accès au microphone pour enregistrer. Uniquement pour cette page.',
+    permBtn:'Autoriser le micro', permRequesting:'Demande en cours…',
+    permDenied:'Permission refusée. Activez-la dans les paramètres du navigateur (icône 🔒) et rechargez.',
+    permFail:'Impossible d\'accéder au microphone : ',
+    recOrig:'Enregistrer Original', recMimic:'Enregistrer Imitation',
+    playBwd:'Lire à l\'envers', stop:'Arrêter', stopping:'Arrêt…',
+    recOrigStatus:'Enregistrement Original…', recMimicStatus:'Enregistrement Imitation…',
+    playRevStatus:'Lecture à l\'envers…', playMimicRevStatus:'Lecture Imitation à l\'envers…',
+    origReady:'Original prêt', mimicReady:'Imitation prête', error:'Erreur de traitement',
+    badgeSaved:'✓ Sauvegardé', badgeOverwritten:'↺ Écrasé',
+    firstMicMsg:'Vous devez d\'abord autoriser le microphone',
+  },
+  de: {
+    ready:'Bereit', processing:'Verarbeitung…', noMic:'Kein Mikrofon',
+    denied:'Berechtigung verweigert', notSupported:'Nicht unterstützt',
+    permTitle:'Mikrofonberechtigung erforderlich',
+    permDesc:'Diese App benötigt Mikrofonzugriff zum Aufnehmen. Nur für diese Seite.',
+    permBtn:'Mikrofon erlauben', permRequesting:'Anfrage…',
+    permDenied:'Berechtigung verweigert. Im Browser aktivieren (🔒) und neu laden.',
+    permFail:'Kein Mikrofonzugriff: ',
+    recOrig:'Original aufnehmen', recMimic:'Nachahmer aufnehmen',
+    playBwd:'Rückwärts abspielen', stop:'Stopp', stopping:'Wird gestoppt…',
+    recOrigStatus:'Nimmt Original auf…', recMimicStatus:'Nimmt Nachahmer auf…',
+    playRevStatus:'Rückwärts abspielen…', playMimicRevStatus:'Nachahmer rückwärts…',
+    origReady:'Original bereit', mimicReady:'Nachahmer bereit', error:'Verarbeitungsfehler',
+    badgeSaved:'✓ Gespeichert', badgeOverwritten:'↺ Überschrieben',
+    firstMicMsg:'Zuerst Mikrofon erlauben',
+  },
+  pt: {
+    ready:'Pronto', processing:'Processando…', noMic:'Sem microfone',
+    denied:'Permissão negada', notSupported:'Não suportado',
+    permTitle:'Permissão de microfone necessária',
+    permDesc:'Este app precisa de acesso ao microfone para gravar. Apenas para esta página.',
+    permBtn:'Permitir microfone', permRequesting:'Solicitando…',
+    permDenied:'Permissão negada. Ative nas configurações do navegador (🔒) e recarregue.',
+    permFail:'Não foi possível acessar o microfone: ',
+    recOrig:'Gravar Original', recMimic:'Gravar Imitação',
+    playBwd:'Tocar ao Contrário', stop:'Parar', stopping:'Parando…',
+    recOrigStatus:'Gravando Original…', recMimicStatus:'Gravando Imitação…',
+    playRevStatus:'Tocando ao contrário…', playMimicRevStatus:'Imitação ao contrário…',
+    origReady:'Original pronto', mimicReady:'Imitação pronta', error:'Erro ao processar',
+    badgeSaved:'✓ Salvo', badgeOverwritten:'↺ Substituído',
+    firstMicMsg:'Você precisa permitir o microfone primeiro',
   }
 };
-let lang = 'en';
 
-function t(k){ return T[lang][k] || k; }
+const LANG_META = {
+  en: { flag:'🇬🇧', code:'EN' },
+  es: { flag:'🇪🇸', code:'ES' },
+  fr: { flag:'🇫🇷', code:'FR' },
+  de: { flag:'🇩🇪', code:'DE' },
+  pt: { flag:'🇵🇹', code:'PT' },
+};
+
+let lang = 'en';
+// Track current status as a key (not translated string) to enable re-translation
+let currentStatusKey = 'ready';
+let currentDotClass  = '';
+
+function t(k){ return (T[lang] && T[lang][k]) ? T[lang][k] : (T.en[k] || k); }
 
 function applyLang(){
-  document.getElementById('permTitle').textContent   = t('permTitle');
-  document.getElementById('permDesc').textContent    = t('permDesc');
-  document.getElementById('btnGrantPerm').textContent= (btnGrantLoading ? t('permRequesting') : t('permBtn'));
-  document.getElementById('lblRecOrig').textContent  = (recording==='orig' ? t('stop') : t('recOrig'));
-  document.getElementById('lblRecMimic').textContent = (recording==='mimic'? t('stop') : t('recMimic'));
-  document.getElementById('lblPlayOrig').textContent = (origPlaying ? t('stop') : t('playBwd'));
-  document.getElementById('lblPlayMimic').textContent= (mimicPlaying ? t('stop') : t('playBwd'));
-  // update status text based on current state
-  if(!recording && !origPlaying && !mimicPlaying){
-    setStatus(currentDotClass, currentStatusText, false);
+  // Permission banner
+  document.getElementById('permTitle').textContent    = t('permTitle');
+  document.getElementById('permDesc').textContent     = t('permDesc');
+  document.getElementById('btnGrantPerm').textContent = (btnGrantLoading ? t('permRequesting') : t('permBtn'));
+
+  // Button labels (context-aware)
+  document.getElementById('lblRecOrig').textContent   = (recording==='orig'  ? t('stop') : t('recOrig'));
+  document.getElementById('lblRecMimic').textContent  = (recording==='mimic' ? t('stop') : t('recMimic'));
+  document.getElementById('lblPlayOrig').textContent  = (origPlaying  ? t('stop') : t('playBwd'));
+  document.getElementById('lblPlayMimic').textContent = (mimicPlaying ? t('stop') : t('playBwd'));
+
+  // Re-translate badges if visible
+  if(badgeRecOrig.classList.contains('show')){
+    badgeRecOrig.textContent = t(badgeRecOrig.dataset.badgeKey || 'badgeSaved');
   }
+  if(badgeRecMimic.classList.contains('show')){
+    badgeRecMimic.textContent = t(badgeRecMimic.dataset.badgeKey || 'badgeSaved');
+  }
+
+  // Re-translate status (only when not actively recording/playing — those update themselves)
+  if(!recording && !origPlaying && !mimicPlaying){
+    const txt = t(currentStatusKey);
+    sDot.className = 'status-dot' + (currentDotClass ? ' '+currentDotClass : '');
+    sText.textContent = txt;
+  }
+
+  // Update lang trigger button
+  const meta = LANG_META[lang];
+  document.getElementById('currFlag').textContent    = meta.flag;
+  document.getElementById('currLangCode').textContent = meta.code;
+
+  // Update active state in panel
+  document.querySelectorAll('.lang-opt').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
 }
 
-window.setLang = function(l){
-  lang = l;
-  document.getElementById('btnEN').classList.toggle('active', l==='en');
-  document.getElementById('btnES').classList.toggle('active', l==='es');
-  applyLang();
-};
+/* ── Lang panel toggle ── */
+const langToggle  = document.getElementById('langToggle');
+const langPanel   = document.getElementById('langPanel');
+const langOverlay = document.getElementById('langOverlay');
+const langTriggerBtn = document.getElementById('langTriggerBtn');
+
+function openLangPanel(){
+  langPanel.classList.add('open');
+  langToggle.classList.add('open');
+  langOverlay.classList.add('open');
+}
+function closeLangPanel(){
+  langPanel.classList.remove('open');
+  langToggle.classList.remove('open');
+  langOverlay.classList.remove('open');
+}
+function toggleLangPanel(){ langPanel.classList.contains('open') ? closeLangPanel() : openLangPanel(); }
+
+langToggle.addEventListener('click', toggleLangPanel);
+langTriggerBtn.addEventListener('click', toggleLangPanel);
+langOverlay.addEventListener('click', closeLangPanel);
+
+// Language option buttons
+document.querySelectorAll('.lang-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    lang = btn.dataset.lang;
+    applyLang();
+    closeLangPanel();
+  });
+});
 
 /* ── DOM refs ── */
 const permBanner  = document.getElementById('permBanner');
@@ -421,8 +607,6 @@ let animId       = null;
 let timerIv      = null;
 let recSecs      = 0;
 let btnGrantLoading = false;
-let currentDotClass = '';
-let currentStatusText = 'Ready';
 
 let origBuffer     = null, origRevBuffer  = null;
 let origRecorder   = null, origChunks     = [];
@@ -431,6 +615,15 @@ let mimicBuffer    = null, mimicRevBuffer = null;
 let mimicRecorder  = null, mimicChunks    = [];
 let mimicPlaying   = false, mimicSource   = null;
 let recording      = null; // 'orig'|'mimic'|null
+
+/* ── Status (key-based) ── */
+function setStatus(dotClass, key, showTimer){
+  currentDotClass = dotClass;
+  currentStatusKey = key;
+  sDot.className = 'status-dot' + (dotClass ? ' '+dotClass : '');
+  sText.textContent = t(key);
+  timerEl.hidden = !showTimer;
+}
 
 /* ── Permission ── */
 async function grantMic(){
@@ -443,39 +636,39 @@ async function grantMic(){
     permBanner.hidden = true;
     micGranted = true;
     btnGrantLoading = false;
-    setStatus('', t('ready'), false);
+    setStatus('', 'ready', false);
   } catch(e){
     btnGrantLoading = false;
     btnGrant.disabled = false;
     btnGrant.textContent = t('permBtn');
     permDesc.textContent = (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError')
       ? t('permDenied') : t('permFail') + e.message;
-    setStatus('', t('noMic'), false);
+    setStatus('', 'noMic', false);
   }
 }
 btnGrant.addEventListener('click', grantMic);
 
 document.addEventListener('DOMContentLoaded', async () => {
   if (!navigator.mediaDevices?.getUserMedia) {
-    permDesc.textContent = T.en.notSupported; // language not set yet
+    permDesc.textContent = T.en.notSupported;
     btnGrant.disabled = true;
-    setStatus('', t('notSupported'), false);
+    setStatus('', 'notSupported', false);
     return;
   }
   try {
     const perm = await navigator.permissions.query({ name: 'microphone' });
     if (perm.state === 'granted'){
       permBanner.hidden = true; micGranted = true;
-      setStatus('', t('ready'), false);
+      setStatus('', 'ready', false);
     } else if (perm.state === 'denied'){
       permDesc.textContent = t('permDenied');
       btnGrant.disabled = true;
-      setStatus('', t('denied'), false);
+      setStatus('', 'denied', false);
     }
     perm.onchange = () => {
       if (perm.state === 'granted'){
         permBanner.hidden = true; micGranted = true;
-        setStatus('', t('ready'), false);
+        setStatus('', 'ready', false);
       }
     };
   } catch(_){}
@@ -487,15 +680,6 @@ function getCtx(){
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
-}
-
-/* ── Status ── */
-function setStatus(dotClass, text, showTimer){
-  currentDotClass = dotClass;
-  currentStatusText = text;
-  sDot.className = 'status-dot' + (dotClass ? ' '+dotClass : '');
-  sText.textContent = text;
-  timerEl.hidden = !showTimer;
 }
 
 /* ── Timer ── */
@@ -512,11 +696,9 @@ function stopTimer(){ clearInterval(timerIv); timerEl.hidden = true; }
 function drawIdle(){
   const w = vizCanvas.offsetWidth, h = vizCanvas.offsetHeight;
   ctx2d.clearRect(0,0,w,h);
-  // Horizontal center line
   ctx2d.strokeStyle = '#333';
   ctx2d.lineWidth = 1;
   ctx2d.beginPath(); ctx2d.moveTo(0,h/2); ctx2d.lineTo(w,h/2); ctx2d.stroke();
-  // Small tick marks
   ctx2d.strokeStyle = '#2a2a2a';
   ctx2d.lineWidth = 1;
   for(let x=0; x<w; x+=8){
@@ -530,8 +712,6 @@ function drawWave(data, color){
   ctx2d.clearRect(0,0,w,h);
   const len = data.length;
   const bw = w / len;
-
-  // Glow layer
   ctx2d.lineWidth = 5;
   ctx2d.strokeStyle = color + '30';
   ctx2d.lineJoin = 'round'; ctx2d.lineCap = 'round';
@@ -542,8 +722,6 @@ function drawWave(data, color){
     i===0 ? ctx2d.moveTo(0, y) : ctx2d.lineTo(i*bw, y);
   }
   ctx2d.stroke();
-
-  // Main line
   ctx2d.lineWidth = 2.5;
   ctx2d.strokeStyle = color;
   ctx2d.beginPath();
@@ -582,7 +760,9 @@ function stopSource(src){ if(!src) return; try{ src.stop(); }catch(e){} }
 
 /* ── Track badge + shimmer + pulse ── */
 function showBadge(badgeEl, shimmerEl, btnEl, type){
-  badgeEl.textContent = t(type === 'saved' ? 'badgeSaved' : 'badgeOverwritten');
+  const key = type === 'saved' ? 'badgeSaved' : 'badgeOverwritten';
+  badgeEl.dataset.badgeKey = key;   // store key for re-translation
+  badgeEl.textContent = t(key);
   badgeEl.className = 'track-badge ' + type + ' show';
   shimmerEl.classList.remove('run');
   void shimmerEl.offsetWidth;
@@ -630,7 +810,7 @@ async function doStartRecord(group){
   catch(e){
     micGranted = false; permBanner.hidden = false;
     permDesc.textContent = t('permDenied');
-    setStatus('', t('noMic'), false); return;
+    setStatus('', 'noMic', false); return;
   }
   const ac = getCtx();
   analyser = ac.createAnalyser();
@@ -651,7 +831,7 @@ async function doStartRecord(group){
     setIcon(iconRecOrig, 'stop');
     lblRecOrig.textContent = t('stop');
     btnPlayOrig.disabled = true; btnRecMimic.disabled = true; btnPlayMimic.disabled = true;
-    setStatus('rec', t('recOrigStatus'), true);
+    setStatus('rec', 'recOrigStatus', true);
   } else {
     mimicRecorder = recorder; mimicChunks = chunks;
     mimicRecorder.onstop = () => { stream.getTracks().forEach(tr=>tr.stop()); processMimic(); };
@@ -661,7 +841,7 @@ async function doStartRecord(group){
     setIcon(iconRecMimic, 'stop');
     lblRecMimic.textContent = t('stop');
     btnRecOrig.disabled = true; btnPlayOrig.disabled = true; btnPlayMimic.disabled = true;
-    setStatus('rec', t('recMimicStatus'), true);
+    setStatus('rec', 'recMimicStatus', true);
   }
   startTimer();
   startViz('#e8433a');
@@ -674,13 +854,13 @@ function stopRecord(group){
     btnRecOrig.classList.remove('active');
     setIcon(iconRecOrig, 'mic');
     lblRecOrig.textContent = t('recOrig');
-    setStatus('', t('processing'), false);
+    setStatus('', 'processing', false);
   } else {
     if(mimicRecorder && mimicRecorder.state !== 'inactive') mimicRecorder.stop();
     btnRecMimic.classList.remove('active');
     setIcon(iconRecMimic, 'mic');
     lblRecMimic.textContent = t('recMimic');
-    setStatus('', t('processing'), false);
+    setStatus('', 'processing', false);
   }
 }
 
@@ -694,10 +874,10 @@ async function processOrig(){
     btnPlayOrig.disabled  = false;
     btnRecMimic.disabled  = false;
     btnPlayMimic.disabled = !mimicRevBuffer;
-    setStatus('', t('origReady'), false);
+    setStatus('', 'origReady', false);
     showBadge(badgeRecOrig, shimmerRecOrig, btnRecOrig, wasOverwrite ? 'overwritten' : 'saved');
   } catch(e){
-    setStatus('', t('error'), false);
+    setStatus('', 'error', false);
     btnRecMimic.disabled  = false;
     btnPlayMimic.disabled = !mimicRevBuffer;
   }
@@ -713,10 +893,10 @@ async function processMimic(){
     btnPlayMimic.disabled = false;
     btnRecOrig.disabled   = false;
     btnPlayOrig.disabled  = !origRevBuffer;
-    setStatus('', t('mimicReady'), false);
+    setStatus('', 'mimicReady', false);
     showBadge(badgeRecMimic, shimmerRecMimic, btnRecMimic, wasOverwrite ? 'overwritten' : 'saved');
   } catch(e){
-    setStatus('', t('error'), false);
+    setStatus('', 'error', false);
     btnRecOrig.disabled   = false;
     btnPlayOrig.disabled  = !origRevBuffer;
   }
@@ -738,10 +918,10 @@ btnPlayOrig.addEventListener('click', () => {
   setIcon(iconPlayOrig, 'stop');
   lblPlayOrig.textContent = t('stop');
   btnRecOrig.disabled = true; btnRecMimic.disabled = true;
-  setStatus('play', t('playRevStatus'), false);
+  setStatus('play', 'playRevStatus', false);
   const { src } = playReversed(origRevBuffer, '#3b82f6', prPlayOrig, () => {
     origSource = null; origPlaying = false; resetPlayOrigUI();
-    setStatus('', t('origReady'), false);
+    setStatus('', 'origReady', false);
   });
   origSource = src;
 });
@@ -749,7 +929,7 @@ btnPlayOrig.addEventListener('click', () => {
 function stopOrigPlay(){
   stopSource(origSource); origSource = null; origPlaying = false;
   prPlayOrig.style.width = '0%'; stopViz(); resetPlayOrigUI();
-  setStatus('', origBuffer ? t('origReady') : t('ready'), false);
+  setStatus('', origBuffer ? 'origReady' : 'ready', false);
 }
 function resetPlayOrigUI(){
   btnPlayOrig.classList.remove('active'); setIcon(iconPlayOrig, 'back');
@@ -772,10 +952,10 @@ btnPlayMimic.addEventListener('click', () => {
   setIcon(iconPlayMimic, 'stop');
   lblPlayMimic.textContent = t('stop');
   btnRecOrig.disabled = true; btnRecMimic.disabled = true;
-  setStatus('rev', t('playMimicRevStatus'), false);
+  setStatus('rev', 'playMimicRevStatus', false);
   const { src } = playReversed(mimicRevBuffer, '#34d399', prPlayMimic, () => {
     mimicSource = null; mimicPlaying = false; resetPlayMimicUI();
-    setStatus('', t('mimicReady'), false);
+    setStatus('', 'mimicReady', false);
   });
   mimicSource = src;
 });
@@ -783,7 +963,7 @@ btnPlayMimic.addEventListener('click', () => {
 function stopMimicPlay(){
   stopSource(mimicSource); mimicSource = null; mimicPlaying = false;
   prPlayMimic.style.width = '0%'; stopViz(); resetPlayMimicUI();
-  setStatus('', mimicBuffer ? t('mimicReady') : t('ready'), false);
+  setStatus('', mimicBuffer ? 'mimicReady' : 'ready', false);
 }
 function resetPlayMimicUI(){
   btnPlayMimic.classList.remove('active'); setIcon(iconPlayMimic, 'back');
