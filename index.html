@@ -10,12 +10,15 @@
   --surface2:     #2c2c2e;
   --btn-record:   #e8433a;
   --btn-rec-dark: #c73029;
+  --btn-mimic:    #7c3aed;
+  --btn-mimic-dark:#6d28d9;
   --btn-idle:     #2c2c2e;
   --btn-idle-bdr: #3a3a3c;
   --fg:           #ffffff;
   --fg-2:         rgba(255,255,255,0.7);
   --fg-3:         rgba(255,255,255,0.35);
   --glow-red:     rgba(232,67,58,0.4);
+  --glow-purple:  rgba(124,58,237,0.45);
   --glow-grn:     rgba(52,211,153,0.35);
   --active-grn:   #059669;
   --playing-blue: #2563eb;
@@ -146,15 +149,26 @@ body{display:flex;flex-direction:column;align-items:center;padding:16px;gap:0;ov
 .track-badge.saved{background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.85)}
 .track-badge.overwritten{background:rgba(232,67,58,0.25);color:#fca5a5}
 
-/* success shimmer overlay */
+/* success shimmer + pulse overlay */
 .btn-shimmer{
   position:absolute;inset:0;border-radius:inherit;
-  background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,0.18) 50%,transparent 70%);
+  background:linear-gradient(110deg,transparent 20%,rgba(255,255,255,0.28) 50%,transparent 80%);
   background-size:200% 100%;
   opacity:0;pointer-events:none;
 }
-.btn-shimmer.run{animation:shimmer 0.7s ease forwards}
-@keyframes shimmer{0%{opacity:1;background-position:100% 0}100%{opacity:0;background-position:-100% 0}}
+.btn-shimmer.run{animation:shimmer 1.1s ease forwards}
+@keyframes shimmer{
+  0%  {opacity:1;background-position:150% 0;transform:scale(1)}
+  40% {opacity:1;transform:scale(1.02)}
+  100%{opacity:0;background-position:-150% 0;transform:scale(1)}
+}
+/* pulse ring on save */
+@keyframes pulseRing{
+  0%  {box-shadow:0 0 0 0 rgba(255,255,255,0.45)}
+  70% {box-shadow:0 0 0 18px rgba(255,255,255,0)}
+  100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}
+}
+.btn.pulse-save{animation:pulseRing 0.7s ease-out}
 
 /* RECORD ORIGINAL */
 .btn-rec-orig{background:var(--btn-record);box-shadow:0 4px 22px var(--glow-red)}
@@ -167,9 +181,9 @@ body{display:flex;flex-direction:column;align-items:center;padding:16px;gap:0;ov
 .btn-play-orig.active{background:var(--playing-blue);border-color:var(--playing-blue);box-shadow:0 0 0 3px rgba(37,99,235,0.3),0 4px 20px rgba(37,99,235,0.35)}
 
 /* RECORD MIMIC */
-.btn-rec-mimic{background:var(--btn-idle);box-shadow:0 2px 8px rgba(0,0,0,0.5);border:1px solid var(--btn-idle-bdr)}
-.btn-rec-mimic:hover:not(:disabled){background:#3a3a3c;border-color:#555}
-.btn-rec-mimic.active{background:var(--active-grn);border-color:var(--active-grn);box-shadow:0 0 0 3px rgba(5,150,105,0.4),0 4px 22px var(--glow-grn)}
+.btn-rec-mimic{background:var(--btn-mimic);box-shadow:0 4px 22px var(--glow-purple);border:none}
+.btn-rec-mimic:hover:not(:disabled){background:var(--btn-mimic-dark);box-shadow:0 6px 28px var(--glow-purple)}
+.btn-rec-mimic.active{background:var(--btn-mimic-dark);box-shadow:0 0 0 3px rgba(124,58,237,0.5),0 4px 24px var(--glow-purple)}
 
 /* PLAY BACKWARDS mimic */
 .btn-play-mimic{background:var(--btn-idle);box-shadow:0 2px 8px rgba(0,0,0,0.5);border:1px solid var(--btn-idle-bdr)}
@@ -183,38 +197,19 @@ body{display:flex;flex-direction:column;align-items:center;padding:16px;gap:0;ov
   transition:width 0.1s linear;
 }
 
-/* ── Custom modal ── */
-.modal-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,0.75);
+/* ── Header logo ── */
+.app-header{
+  width:100%;max-width:480px;
   display:flex;align-items:center;justify-content:center;
-  padding:20px;z-index:100;
-  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-  opacity:0;transition:opacity 0.2s;
-  pointer-events:none;
+  padding:8px 0 4px;
+  margin-bottom:8px;
 }
-.modal-overlay.show{opacity:1;pointer-events:all}
-.modal-box{
-  background:#1c1c1e;border:1px solid #3a3a3c;
-  border-radius:20px;padding:28px 24px 20px;
-  max-width:340px;width:100%;
-  transform:translateY(12px) scale(0.97);
-  transition:transform 0.2s cubic-bezier(.2,.8,.2,1);
-  display:flex;flex-direction:column;gap:14px;
+.app-header img{
+  height:48px;width:auto;
+  max-width:200px;
+  object-fit:contain;
+  filter:drop-shadow(0 2px 8px rgba(232,67,58,0.25));
 }
-.modal-overlay.show .modal-box{transform:translateY(0) scale(1)}
-.modal-icon{font-size:2rem;text-align:center}
-.modal-title{font-size:1rem;font-weight:700;text-align:center}
-.modal-desc{font-size:0.82rem;color:var(--fg-2);text-align:center;line-height:1.5}
-.modal-actions{display:flex;gap:10px;margin-top:4px}
-.modal-btn{
-  flex:1;padding:12px;border:none;border-radius:12px;
-  font-family:inherit;font-size:0.85rem;font-weight:700;
-  cursor:pointer;transition:all 0.15s;letter-spacing:0.02em;
-}
-.modal-btn-cancel{background:var(--surface2);color:var(--fg-2);border:1px solid var(--btn-idle-bdr)}
-.modal-btn-cancel:hover{background:#3a3a3c;color:#fff}
-.modal-btn-confirm{background:var(--btn-record);color:#fff}
-.modal-btn-confirm:hover{background:var(--btn-rec-dark)}
 
 @media(prefers-reduced-motion:reduce){.status-dot{animation:none!important}.btn{transition:none}.btn-shimmer{animation:none!important}}
 @media(max-width:380px){
@@ -222,6 +217,11 @@ body{display:flex;flex-direction:column;align-items:center;padding:16px;gap:0;ov
   .btn-icon{width:42px;height:42px}
 }
 </style>
+
+<!-- Header logo -->
+<header class="app-header">
+  <img src="/logo.png" alt="Logo" onerror="this.style.display='none'">
+</header>
 
 <!-- Language bar -->
 <div class="lang-bar">
@@ -281,7 +281,7 @@ body{display:flex;flex-direction:column;align-items:center;padding:16px;gap:0;ov
   </div>
 
   <div class="group">
-    <button class="btn btn-rec-mimic" id="btnRecMimic">
+    <button class="btn btn-rec-mimic" id="btnRecMimic" disabled>
       <div class="track-badge" id="badgeRecMimic"></div>
       <div class="btn-shimmer" id="shimmerRecMimic"></div>
       <div class="btn-icon" id="iconRecMimic">
@@ -300,18 +300,6 @@ body{display:flex;flex-direction:column;align-items:center;padding:16px;gap:0;ov
   </div>
 </div>
 
-<!-- Overwrite confirmation modal -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal-box">
-    <div class="modal-icon">⚠️</div>
-    <div class="modal-title" id="modalTitle">Overwrite recording?</div>
-    <div class="modal-desc" id="modalDesc">You already have a recording. Do you want to replace it with a new one?</div>
-    <div class="modal-actions">
-      <button class="modal-btn modal-btn-cancel" id="modalCancel">Cancel</button>
-      <button class="modal-btn modal-btn-confirm" id="modalConfirm">Overwrite</button>
-    </div>
-  </div>
-</div>
 
 <script>
 (function(){
@@ -333,9 +321,6 @@ const T = {
     playRevStatus:'Playing backwards…', playMimicRevStatus:'Playing Mimic backwards…',
     origReady:'Original ready', mimicReady:'Mimic ready', error:'Error processing',
     badgeSaved:'✓ Saved', badgeOverwritten:'↺ Overwritten',
-    modalTitle:'Overwrite recording?',
-    modalDesc:'You already have a recording. Do you want to replace it with a new one?',
-    modalCancel:'Cancel', modalConfirm:'Overwrite',
     firstMicMsg:'You need to allow the microphone first',
   },
   es: {
@@ -352,9 +337,6 @@ const T = {
     playRevStatus:'Reproduciendo al revés…', playMimicRevStatus:'Reproduciendo Mímica al revés…',
     origReady:'Original listo', mimicReady:'Mímica lista', error:'Error al procesar',
     badgeSaved:'✓ Guardado', badgeOverwritten:'↺ Sobreescrito',
-    modalTitle:'¿Sobreescribir grabación?',
-    modalDesc:'Ya tienes una grabación. ¿Quieres reemplazarla con una nueva?',
-    modalCancel:'Cancelar', modalConfirm:'Sobreescribir',
     firstMicMsg:'Primero debes permitir el micrófono',
   }
 };
@@ -370,10 +352,6 @@ function applyLang(){
   document.getElementById('lblRecMimic').textContent = (recording==='mimic'? t('stop') : t('recMimic'));
   document.getElementById('lblPlayOrig').textContent = (origPlaying ? t('stop') : t('playBwd'));
   document.getElementById('lblPlayMimic').textContent= (mimicPlaying ? t('stop') : t('playBwd'));
-  document.getElementById('modalTitle').textContent  = t('modalTitle');
-  document.getElementById('modalDesc').textContent   = t('modalDesc');
-  document.getElementById('modalCancel').textContent = t('modalCancel');
-  document.getElementById('modalConfirm').textContent= t('modalConfirm');
   // update status text based on current state
   if(!recording && !origPlaying && !mimicPlaying){
     setStatus(currentDotClass, currentStatusText, false);
@@ -415,9 +393,6 @@ const badgeRecOrig = document.getElementById('badgeRecOrig');
 const badgeRecMimic= document.getElementById('badgeRecMimic');
 const shimmerRecOrig  = document.getElementById('shimmerRecOrig');
 const shimmerRecMimic = document.getElementById('shimmerRecMimic');
-const modalOverlay = document.getElementById('modalOverlay');
-const modalCancel  = document.getElementById('modalCancel');
-const modalConfirm = document.getElementById('modalConfirm');
 
 /* ── SVG icons ── */
 const IC = {
@@ -456,26 +431,6 @@ let mimicBuffer    = null, mimicRevBuffer = null;
 let mimicRecorder  = null, mimicChunks    = [];
 let mimicPlaying   = false, mimicSource   = null;
 let recording      = null; // 'orig'|'mimic'|null
-
-/* ── Overwrite modal ── */
-let pendingRecordGroup = null;
-
-function showModal(group){
-  pendingRecordGroup = group;
-  modalOverlay.classList.add('show');
-}
-function hideModal(){
-  modalOverlay.classList.remove('show');
-  pendingRecordGroup = null;
-}
-
-modalCancel.addEventListener('click', hideModal);
-modalOverlay.addEventListener('click', e => { if(e.target === modalOverlay) hideModal(); });
-modalConfirm.addEventListener('click', () => {
-  const g = pendingRecordGroup;
-  hideModal();
-  if(g) doStartRecord(g);
-});
 
 /* ── Permission ── */
 async function grantMic(){
@@ -625,13 +580,17 @@ function reverseBuffer(buf){
 
 function stopSource(src){ if(!src) return; try{ src.stop(); }catch(e){} }
 
-/* ── Track badge + shimmer ── */
-function showBadge(badgeEl, shimmerEl, type){
+/* ── Track badge + shimmer + pulse ── */
+function showBadge(badgeEl, shimmerEl, btnEl, type){
   badgeEl.textContent = t(type === 'saved' ? 'badgeSaved' : 'badgeOverwritten');
   badgeEl.className = 'track-badge ' + type + ' show';
   shimmerEl.classList.remove('run');
-  void shimmerEl.offsetWidth; // reflow
+  void shimmerEl.offsetWidth;
   shimmerEl.classList.add('run');
+  btnEl.classList.remove('pulse-save');
+  void btnEl.offsetWidth;
+  btnEl.classList.add('pulse-save');
+  btnEl.addEventListener('animationend', () => btnEl.classList.remove('pulse-save'), { once: true });
 }
 
 /* ── Generic play reversed ── */
@@ -659,12 +618,10 @@ function playReversed(revBuf, color, prBar, onEnd){
   return { src };
 }
 
-/* ── Record — with overwrite check ── */
+/* ── Record ── */
 function tryRecord(group){
   if (!micGranted){ permBanner.hidden=false; permBanner.scrollIntoView({behavior:'smooth',block:'center'}); setStatus('','',false); return; }
-  const hasExisting = (group==='orig' ? origBuffer : mimicBuffer);
-  if(hasExisting){ showModal(group); }
-  else { doStartRecord(group); }
+  doStartRecord(group);
 }
 
 async function doStartRecord(group){
@@ -738,7 +695,7 @@ async function processOrig(){
     btnRecMimic.disabled  = false;
     btnPlayMimic.disabled = !mimicRevBuffer;
     setStatus('', t('origReady'), false);
-    showBadge(badgeRecOrig, shimmerRecOrig, wasOverwrite ? 'overwritten' : 'saved');
+    showBadge(badgeRecOrig, shimmerRecOrig, btnRecOrig, wasOverwrite ? 'overwritten' : 'saved');
   } catch(e){
     setStatus('', t('error'), false);
     btnRecMimic.disabled  = false;
@@ -757,7 +714,7 @@ async function processMimic(){
     btnRecOrig.disabled   = false;
     btnPlayOrig.disabled  = !origRevBuffer;
     setStatus('', t('mimicReady'), false);
-    showBadge(badgeRecMimic, shimmerRecMimic, wasOverwrite ? 'overwritten' : 'saved');
+    showBadge(badgeRecMimic, shimmerRecMimic, btnRecMimic, wasOverwrite ? 'overwritten' : 'saved');
   } catch(e){
     setStatus('', t('error'), false);
     btnRecOrig.disabled   = false;
