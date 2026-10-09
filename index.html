@@ -67,81 +67,87 @@ body{display:flex;flex-direction:column;align-items:center;padding:16px;gap:0;ov
 }
 .lang-trigger .curr-flag{font-size:1rem;line-height:1}
 
-/* ── Fixed left slide-out language panel ── */
-.lang-panel-toggle{
-  position:fixed;top:50%;left:0;transform:translateY(-50%);
-  z-index:200;
-  background:var(--surface2);
-  border:1.5px solid var(--btn-idle-bdr);
-  border-left:none;
-  border-radius:0 10px 10px 0;
-  width:28px;height:56px;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;
-  transition:background 0.18s, transform 0.18s;
-  -webkit-tap-highlight-color:transparent;
+/* ── Language modal ── */
+.lang-modal-backdrop{
+  display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,0.65);
+  backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;
 }
-.lang-panel-toggle:hover{background:#3a3a3c}
-.lang-panel-toggle svg{
-  width:14px;height:14px;fill:var(--fg-2);
-  transition:transform 0.25s cubic-bezier(.4,0,.2,1);
-}
-.lang-panel-toggle.open svg{transform:rotate(180deg)}
-
-.lang-panel{
-  position:fixed;top:50%;left:0;
-  transform:translate(-100%, -50%);
-  z-index:199;
+.lang-modal-backdrop.open{display:flex}
+.lang-modal{
   background:var(--surface);
-  border:1.5px solid var(--btn-idle-bdr);
-  border-radius:0 16px 16px 0;
-  padding:14px 10px;
-  display:flex;flex-direction:column;gap:6px;
-  transition:transform 0.28s cubic-bezier(.4,0,.2,1);
-  min-width:90px;
+  border:1.5px solid rgba(255,255,255,0.1);
+  border-radius:20px;
+  padding:22px 18px 18px;
+  width:min(320px,92vw);
+  display:flex;flex-direction:column;gap:10px;
+  box-shadow:0 24px 60px rgba(0,0,0,0.6);
+  animation:modalIn 0.22s cubic-bezier(.4,0,.2,1);
 }
-.lang-panel.open{transform:translate(0, -50%)}
-
+@keyframes modalIn{
+  from{opacity:0;transform:scale(0.92) translateY(8px)}
+  to{opacity:1;transform:scale(1) translateY(0)}
+}
+.lang-modal-title{
+  font-size:0.78rem;font-weight:700;letter-spacing:0.1em;
+  text-transform:uppercase;color:var(--fg-3);
+  padding-bottom:6px;
+  border-bottom:1px solid rgba(255,255,255,0.07);
+  margin-bottom:2px;
+}
 .lang-opt{
-  display:flex;align-items:center;gap:8px;
+  display:flex;align-items:center;gap:10px;
   background:transparent;border:1.5px solid transparent;
-  border-radius:10px;padding:7px 10px;
-  font-family:inherit;font-size:0.75rem;font-weight:600;
+  border-radius:12px;padding:10px 14px;
+  font-family:inherit;font-size:0.82rem;font-weight:600;
   color:var(--fg-2);cursor:pointer;
-  letter-spacing:0.04em;
+  letter-spacing:0.03em;
   transition:all 0.15s;
   -webkit-tap-highlight-color:transparent;
   white-space:nowrap;
+  text-align:left;width:100%;
 }
-.lang-opt .flag{font-size:1.15rem;line-height:1}
+.lang-opt .flag{font-size:1.3rem;line-height:1}
 .lang-opt:hover{
   background:rgba(255,255,255,0.08);
   border-color:rgba(255,255,255,0.15);
   color:#fff;
 }
 .lang-opt.active{
-  background:rgba(255,255,255,0.12);
-  border-color:rgba(255,255,255,0.4);
+  background:rgba(255,255,255,0.1);
+  border-color:rgba(255,255,255,0.35);
   color:#fff;
 }
+.lang-opt-name{flex:1}
+.lang-opt-check{
+  width:16px;height:16px;border-radius:50%;
+  background:rgba(255,255,255,0.9);
+  display:none;flex-shrink:0;
+  align-items:center;justify-content:center;
+}
+.lang-opt.active .lang-opt-check{display:flex}
+.lang-opt-check svg{width:10px;height:10px;fill:#000}
 
 /* ── Permission banner ── */
 #permBanner{
   width:100%;max-width:480px;
-  background:#1f2937;border:1px solid #374151;
-  border-radius:16px;padding:18px 20px;
-  display:flex;flex-direction:column;gap:12px;
-  margin-bottom:16px;
+  background:rgba(31,41,55,0.7);border:1px solid #374151;
+  border-radius:12px;padding:10px 14px;
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:14px;
+  flex-wrap:wrap;
 }
 #permBanner[hidden]{display:none}
-.perm-title{font-size:0.9rem;font-weight:700;display:flex;align-items:center;gap:8px}
-.perm-title svg{width:18px;height:18px;fill:#facc15;flex-shrink:0}
-.perm-desc{font-size:0.78rem;color:var(--fg-2);line-height:1.5}
+.perm-title{font-size:0.78rem;font-weight:700;display:flex;align-items:center;gap:6px;flex:1;min-width:0}
+.perm-title svg{width:14px;height:14px;fill:#facc15;flex-shrink:0}
+.perm-desc{display:none}
 #btnGrantPerm{
-  align-self:flex-end;background:var(--btn-record);color:#fff;
-  border:none;border-radius:10px;padding:9px 20px;
-  font-family:inherit;font-size:0.82rem;font-weight:700;
+  flex-shrink:0;background:var(--btn-record);color:#fff;
+  border:none;border-radius:8px;padding:6px 14px;
+  font-family:inherit;font-size:0.75rem;font-weight:700;
   cursor:pointer;transition:background 0.15s;letter-spacing:0.03em;
+  white-space:nowrap;
 }
 #btnGrantPerm:hover{background:var(--btn-rec-dark)}
 
@@ -271,11 +277,6 @@ body{display:flex;flex-direction:column;align-items:center;padding:16px;gap:0;ov
   transition:width 0.1s linear;
 }
 
-/* Overlay to close panel on outside click */
-.lang-overlay{
-  display:none;position:fixed;inset:0;z-index:198;
-}
-.lang-overlay.open{display:block}
 
 @media(prefers-reduced-motion:reduce){.status-dot{animation:none!important}.btn{transition:none}.btn-shimmer{animation:none!important}}
 @media(max-width:380px){
@@ -285,21 +286,36 @@ body{display:flex;flex-direction:column;align-items:center;padding:16px;gap:0;ov
 }
 </style>
 
-<!-- Overlay to close lang panel -->
-<div class="lang-overlay" id="langOverlay"></div>
-
-<!-- Left slide-out panel toggle -->
-<div class="lang-panel-toggle" id="langToggle" role="button" aria-label="Language menu">
-  <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-</div>
-
-<!-- Slide-out lang panel -->
-<div class="lang-panel" id="langPanel">
-  <button class="lang-opt active" data-lang="en"><span class="flag">🇬🇧</span> EN</button>
-  <button class="lang-opt" data-lang="es"><span class="flag">🇪🇸</span> ES</button>
-  <button class="lang-opt" data-lang="fr"><span class="flag">🇫🇷</span> FR</button>
-  <button class="lang-opt" data-lang="de"><span class="flag">🇩🇪</span> DE</button>
-  <button class="lang-opt" data-lang="pt"><span class="flag">🇵🇹</span> PT</button>
+<!-- Language modal -->
+<div class="lang-modal-backdrop" id="langModalBackdrop">
+  <div class="lang-modal" role="dialog" aria-modal="true" aria-label="Select language">
+    <div class="lang-modal-title">Select language</div>
+    <button class="lang-opt active" data-lang="en">
+      <span class="flag">🇬🇧</span>
+      <span class="lang-opt-name">English</span>
+      <span class="lang-opt-check"><svg viewBox="0 0 10 10"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#000" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </button>
+    <button class="lang-opt" data-lang="es">
+      <span class="flag">🇪🇸</span>
+      <span class="lang-opt-name">Español</span>
+      <span class="lang-opt-check"><svg viewBox="0 0 10 10"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#000" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </button>
+    <button class="lang-opt" data-lang="fr">
+      <span class="flag">🇫🇷</span>
+      <span class="lang-opt-name">Français</span>
+      <span class="lang-opt-check"><svg viewBox="0 0 10 10"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#000" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </button>
+    <button class="lang-opt" data-lang="de">
+      <span class="flag">🇩🇪</span>
+      <span class="lang-opt-name">Deutsch</span>
+      <span class="lang-opt-check"><svg viewBox="0 0 10 10"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#000" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </button>
+    <button class="lang-opt" data-lang="pt">
+      <span class="flag">🇵🇹</span>
+      <span class="lang-opt-name">Português</span>
+      <span class="lang-opt-check"><svg viewBox="0 0 10 10"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#000" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </button>
+  </div>
 </div>
 
 <!-- Top row: title + current lang trigger -->
@@ -315,10 +331,9 @@ body{display:flex;flex-direction:column;align-items:center;padding:16px;gap:0;ov
 <div id="permBanner">
   <div class="perm-title">
     <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm.75 14.5h-1.5v-6h1.5v6zm0-8h-1.5V7h1.5v1.5z"/></svg>
-    <span id="permTitle">Microphone permission required</span>
+    <span id="permTitle">Microphone required</span>
   </div>
-  <div class="perm-desc" id="permDesc">This app needs microphone access to record audio. Permission is only for this page.</div>
-  <button id="btnGrantPerm">Allow microphone</button>
+  <button id="btnGrantPerm">Allow</button>
 </div>
 
 <!-- Status bar -->
@@ -400,6 +415,7 @@ const T = {
     origReady:'Original ready', mimicReady:'Mimic ready', error:'Error processing',
     badgeSaved:'✓ Saved', badgeOverwritten:'↺ Overwritten',
     firstMicMsg:'You need to allow the microphone first',
+    selectLang:'Select language', permShort:'Microphone required',
   },
   es: {
     ready:'Listo', processing:'Procesando…', noMic:'Sin micrófono',
@@ -416,6 +432,7 @@ const T = {
     origReady:'Original listo', mimicReady:'Mímica lista', error:'Error al procesar',
     badgeSaved:'✓ Guardado', badgeOverwritten:'↺ Sobreescrito',
     firstMicMsg:'Primero debes permitir el micrófono',
+    selectLang:'Seleccionar idioma', permShort:'Micrófono requerido',
   },
   fr: {
     ready:'Prêt', processing:'Traitement…', noMic:'Pas de micro',
@@ -432,6 +449,7 @@ const T = {
     origReady:'Original prêt', mimicReady:'Imitation prête', error:'Erreur de traitement',
     badgeSaved:'✓ Sauvegardé', badgeOverwritten:'↺ Écrasé',
     firstMicMsg:'Vous devez d\'abord autoriser le microphone',
+    selectLang:'Choisir la langue', permShort:'Microphone requis',
   },
   de: {
     ready:'Bereit', processing:'Verarbeitung…', noMic:'Kein Mikrofon',
@@ -448,6 +466,7 @@ const T = {
     origReady:'Original bereit', mimicReady:'Nachahmer bereit', error:'Verarbeitungsfehler',
     badgeSaved:'✓ Gespeichert', badgeOverwritten:'↺ Überschrieben',
     firstMicMsg:'Zuerst Mikrofon erlauben',
+    selectLang:'Sprache wählen', permShort:'Mikrofon erforderlich',
   },
   pt: {
     ready:'Pronto', processing:'Processando…', noMic:'Sem microfone',
@@ -464,6 +483,7 @@ const T = {
     origReady:'Original pronto', mimicReady:'Imitação pronta', error:'Erro ao processar',
     badgeSaved:'✓ Salvo', badgeOverwritten:'↺ Substituído',
     firstMicMsg:'Você precisa permitir o microfone primeiro',
+    selectLang:'Selecionar idioma', permShort:'Microfone necessário',
   }
 };
 
@@ -484,8 +504,7 @@ function t(k){ return (T[lang] && T[lang][k]) ? T[lang][k] : (T.en[k] || k); }
 
 function applyLang(){
   // Permission banner
-  document.getElementById('permTitle').textContent    = t('permTitle');
-  document.getElementById('permDesc').textContent     = t('permDesc');
+  document.getElementById('permTitle').textContent    = t('permShort');
   document.getElementById('btnGrantPerm').textContent = (btnGrantLoading ? t('permRequesting') : t('permBtn'));
 
   // Button labels (context-aware)
@@ -509,10 +528,12 @@ function applyLang(){
     sText.textContent = txt;
   }
 
-  // Update lang trigger button
+  // Update lang trigger button & modal title
   const meta = LANG_META[lang];
-  document.getElementById('currFlag').textContent    = meta.flag;
+  document.getElementById('currFlag').textContent     = meta.flag;
   document.getElementById('currLangCode').textContent = meta.code;
+  const modalTitle = document.querySelector('.lang-modal-title');
+  if(modalTitle) modalTitle.textContent = t('selectLang');
 
   // Update active state in panel
   document.querySelectorAll('.lang-opt').forEach(btn => {
@@ -520,41 +541,33 @@ function applyLang(){
   });
 }
 
-/* ── Lang panel toggle ── */
-const langToggle  = document.getElementById('langToggle');
-const langPanel   = document.getElementById('langPanel');
-const langOverlay = document.getElementById('langOverlay');
-const langTriggerBtn = document.getElementById('langTriggerBtn');
+/* ── Lang modal ── */
+const langModalBackdrop = document.getElementById('langModalBackdrop');
+const langTriggerBtn    = document.getElementById('langTriggerBtn');
 
-function openLangPanel(){
-  langPanel.classList.add('open');
-  langToggle.classList.add('open');
-  langOverlay.classList.add('open');
-}
-function closeLangPanel(){
-  langPanel.classList.remove('open');
-  langToggle.classList.remove('open');
-  langOverlay.classList.remove('open');
-}
-function toggleLangPanel(){ langPanel.classList.contains('open') ? closeLangPanel() : openLangPanel(); }
+function openLangModal(){ langModalBackdrop.classList.add('open'); }
+function closeLangModal(){ langModalBackdrop.classList.remove('open'); }
 
-langToggle.addEventListener('click', toggleLangPanel);
-langTriggerBtn.addEventListener('click', toggleLangPanel);
-langOverlay.addEventListener('click', closeLangPanel);
+langTriggerBtn.addEventListener('click', openLangModal);
+langModalBackdrop.addEventListener('click', e => {
+  if(e.target === langModalBackdrop) closeLangModal();
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') closeLangModal();
+});
 
 // Language option buttons
 document.querySelectorAll('.lang-opt').forEach(btn => {
   btn.addEventListener('click', () => {
     lang = btn.dataset.lang;
     applyLang();
-    closeLangPanel();
+    closeLangModal();
   });
 });
 
 /* ── DOM refs ── */
 const permBanner  = document.getElementById('permBanner');
 const btnGrant    = document.getElementById('btnGrantPerm');
-const permDesc    = document.getElementById('permDesc');
 const sDot        = document.getElementById('sDot');
 const sText       = document.getElementById('sText');
 const timerEl     = document.getElementById('timerEl');
@@ -641,8 +654,8 @@ async function grantMic(){
     btnGrantLoading = false;
     btnGrant.disabled = false;
     btnGrant.textContent = t('permBtn');
-    permDesc.textContent = (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError')
-      ? t('permDenied') : t('permFail') + e.message;
+    document.getElementById('permTitle').textContent = (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError')
+      ? t('denied') : t('noMic');
     setStatus('', 'noMic', false);
   }
 }
@@ -650,7 +663,7 @@ btnGrant.addEventListener('click', grantMic);
 
 document.addEventListener('DOMContentLoaded', async () => {
   if (!navigator.mediaDevices?.getUserMedia) {
-    permDesc.textContent = T.en.notSupported;
+    document.getElementById('permTitle').textContent = T.en.notSupported;
     btnGrant.disabled = true;
     setStatus('', 'notSupported', false);
     return;
@@ -661,7 +674,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       permBanner.hidden = true; micGranted = true;
       setStatus('', 'ready', false);
     } else if (perm.state === 'denied'){
-      permDesc.textContent = t('permDenied');
+      document.getElementById('permTitle').textContent = t('denied');
       btnGrant.disabled = true;
       setStatus('', 'denied', false);
     }
@@ -809,7 +822,7 @@ async function doStartRecord(group){
   try { stream = await navigator.mediaDevices.getUserMedia({ audio:true, video:false }); }
   catch(e){
     micGranted = false; permBanner.hidden = false;
-    permDesc.textContent = t('permDenied');
+    document.getElementById('permTitle').textContent = t('denied');
     setStatus('', 'noMic', false); return;
   }
   const ac = getCtx();
